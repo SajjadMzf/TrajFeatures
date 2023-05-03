@@ -11,7 +11,8 @@ import pandas
 import pdb
 # python -m pdb -c continue 
 class RenderScenarios:
-    """This class is for rendering extracted scenarios from HighD dataset recording files (needs to be called seperately for each scenario).
+    """This class is for rendering extracted scenarios from HighD dataset 
+    recording files (needs to be called seperately for each scenario).
     """
     def __init__(
         self,
@@ -39,26 +40,39 @@ class RenderScenarios:
         
         
         self.LC_states_dir = "../../Dataset/" + dataset_name + "/Scenarios"  
-        self.LC_image_dataset_rdir = "../../Dataset/" + dataset_name + "/RenderedDataset"
-        self.frames_data = rc.read_track_csv(track_path, frame_pickle_path, group_by = 'frames', fr_div = self.fr_div)
-        self.data_tracks = rc.read_track_csv(track_path, track_pickle_path, group_by = 'tracks', reload = False, fr_div = self.fr_div)
-        self.track_list = [data_track[rc.TRACK_ID][0] for data_track in self.data_tracks]
+        self.LC_image_dataset_rdir = "../../Dataset/" + dataset_name + \
+            "/RenderedDataset"
+        self.frames_data = rc.read_track_csv(track_path, 
+                                             frame_pickle_path,
+                                              group_by = 'frames', 
+                                              fr_div = self.fr_div)
+        self.data_tracks = rc.read_track_csv(track_path, 
+                                             track_pickle_path,
+                                              group_by = 'tracks', 
+                                              reload = False, 
+                                              fr_div = self.fr_div)
+        self.track_list = [data_track[rc.TRACK_ID][0] \
+                           for data_track in self.data_tracks]
         
         #self.statics = rc.read_static_info(static_path)
         df = pandas.read_csv(track_path)
         selected_frames = (df.frame%self.fr_div == 0).real.tolist()
         df = df.loc[selected_frames]
-        self.frame_list = [data_frame[rc.FRAME][0] for data_frame in self.frames_data]
+        self.frame_list = [data_frame[rc.FRAME][0] \
+                            for data_frame in self.frames_data]
         self.update_dirs()
         
     def load_scenarios(self):
-        file_dir = os.path.join(self.LC_states_dir, str(self.file_num).zfill(2) + '.pickle')
+        file_dir = os.path.join(self.LC_states_dir,
+                                 str(self.file_num).zfill(2) + '.pickle')
         with open(file_dir, 'rb') as handle:
             self.scenarios = pickle.load(handle)
     
     def save_dataset(self):
-        file_dir = os.path.join(self.LC_image_dataset_dir, str(self.file_num).zfill(2) + '.h5')
-        npy_dir = os.path.join(self.LC_image_dataset_dir, str(self.file_num).zfill(2) + '.npy')
+        file_dir = os.path.join(self.LC_image_dataset_dir, 
+                                str(self.file_num).zfill(2) + '.h5')
+        npy_dir = os.path.join(self.LC_image_dataset_dir, 
+                               str(self.file_num).zfill(2) + '.npy')
         hf = h5py.File(file_dir, 'w')
         
         data_num = len(self.scenarios)
@@ -66,27 +80,51 @@ class RenderScenarios:
         for itr in range(data_num):
             total_frames += len(self.scenarios[itr]['frames'])
 
-        frame_data = hf.create_dataset('frame_data', shape = (total_frames,), dtype = np.float32)       
-        x_data = hf.create_dataset('x_data', shape = (total_frames,), dtype = np.float32)       
-        y_data = hf.create_dataset('y_data', shape = (total_frames,), dtype = np.float32)       
+        frame_data = hf.create_dataset('frame_data', shape = (total_frames,), 
+                                       dtype = np.float32)       
+        x_data = hf.create_dataset('x_data', shape = (total_frames,), 
+                                   dtype = np.float32)       
+        y_data = hf.create_dataset('y_data', shape = (total_frames,), 
+                                   dtype = np.float32)       
         
-        file_ids = hf.create_dataset('file_ids', shape = (total_frames,), dtype = np.int)
-        tv_data = hf.create_dataset('tv_data', shape = (total_frames,), dtype = np.int)
-        labels = hf.create_dataset('labels', shape = (total_frames,), dtype = np.float32)
-        state_merging_data = hf.create_dataset('state_merging', shape = (total_frames, 21), dtype = np.float32)
-        output_states_data = hf.create_dataset('output_states_data', shape = (total_frames, 2), dtype = np.float32)
+        file_ids = hf.create_dataset('file_ids', shape = (total_frames,), 
+                                     dtype = np.int)
+        tv_data = hf.create_dataset('tv_data', shape = (total_frames,), 
+                                    dtype = np.int)
+        labels = hf.create_dataset('labels', shape = (total_frames,), 
+                                   dtype = np.float32)
+        state_povl_data = hf.create_dataset('state_povl', 
+                                            shape = (total_frames, 27), 
+                                            dtype = np.float32)
+        state_constantx_data = hf.create_dataset('state_constantx_data', 
+                                                 shape = (total_frames, 4), 
+                                                 dtype = np.float32)
+        output_states_data = hf.create_dataset('output_states_data', 
+                                               shape = (total_frames, 2), 
+                                               dtype = np.float32)
         
         cur_frame = 0
+        #pdb.set_trace()
         for itr in range(data_num):
             scenario_length = len(self.scenarios[itr]['frames'])
-            state_merging_data[cur_frame:(cur_frame+scenario_length), :] = self.scenarios[itr]['states_merging']
-            output_states_data[cur_frame:(cur_frame+scenario_length), :] = self.scenarios[itr]['output_states']
-            frame_data[cur_frame:(cur_frame+scenario_length)] = self.scenarios[itr]['frames']
-            x_data[cur_frame:(cur_frame+scenario_length)] = self.scenarios[itr]['x']
-            y_data[cur_frame:(cur_frame+scenario_length)] = self.scenarios[itr]['y']
-            tv_data[cur_frame:(cur_frame+scenario_length)] = self.scenarios[itr]['tv']
-            file_ids[cur_frame:(cur_frame+scenario_length)] = self.scenarios[itr]['file']
-            labels[cur_frame:(cur_frame+scenario_length)] = self.scenarios[itr]['label']
+            state_povl_data[cur_frame:(cur_frame+scenario_length), :] =\
+                  self.scenarios[itr]['states_povl']
+            state_constantx_data[cur_frame:(cur_frame+scenario_length), :] = \
+                self.scenarios[itr]['states_constantx']
+            output_states_data[cur_frame:(cur_frame+scenario_length), :] = \
+                self.scenarios[itr]['output_states']
+            frame_data[cur_frame:(cur_frame+scenario_length)] = \
+                self.scenarios[itr]['frames']
+            x_data[cur_frame:(cur_frame+scenario_length)] = \
+                self.scenarios[itr]['x']
+            y_data[cur_frame:(cur_frame+scenario_length)] = \
+                self.scenarios[itr]['y']
+            tv_data[cur_frame:(cur_frame+scenario_length)] = \
+                self.scenarios[itr]['tv']
+            file_ids[cur_frame:(cur_frame+scenario_length)] = \
+                self.scenarios[itr]['file']
+            labels[cur_frame:(cur_frame+scenario_length)] = \
+                self.scenarios[itr]['label']
             cur_frame +=scenario_length
             
         assert(cur_frame == total_frames)
@@ -98,10 +136,12 @@ class RenderScenarios:
         
         for scenario_idx, scenario in enumerate(self.scenarios):        
             if scenario_idx%500 == 0:
-                print('Scenario {} out of: {}'.format(scenario_idx, len(self.scenarios)))
+                print('Scenario {} out of: {}'\
+                      .format(scenario_idx, len(self.scenarios)))
             tv_id = scenario['tv']
             img_frames = []
-            states_merging = []
+            states_povl = []
+            states_constantx = []
             output_states = []
             number_of_fr = len(scenario['frames'])
             tv_lane_ind = None
@@ -111,7 +151,8 @@ class RenderScenarios:
                 img_frames.append(frame)
                 
                 svs_ids = scenario['svs']['id'][:,fr]
-                state_merging, output_state, tv_lane_ind = self.calc_states(
+                state_povl, state_constantx, output_state, tv_lane_ind =\
+                      self.calc_states_povl(
                     self.frames_data[self.frame_list.index(frame)],
                     tv_id, 
                     svs_ids,
@@ -119,21 +160,26 @@ class RenderScenarios:
                     tv_lane_ind
                     )
                 output_states.append(output_state)
-                if fr==0: # first time-step is repeated so that when we calc the diff, the first timestep would be zero displacement. 
+                # first time-step is repeated so that when we calc the diff, 
+                # the first timestep would be zero displacement.
+                if fr==0:  
                     output_states.append(output_state)
                 
-                states_merging.append(state_merging)
+                states_povl.append(state_povl)
+                states_constantx.append(state_constantx)
                     
-            self.scenarios[scenario_idx]['states_merging'] = np.array(states_merging)
+            self.scenarios[scenario_idx]['states_povl'] = np.array(states_povl)
+            self.scenarios[scenario_idx]['states_constantx'] = \
+                np.array(states_constantx)
+            
             output_states = np.array(output_states)
-            pdb.set_trace()
-            output_states = output_states[1:,:]- output_states[:-1,:] # output_states[i] = x[i]-x[i-1] except for i=0 where output_states =0
+            output_states = output_states[1:,:]- output_states[:-1,:] 
             self.scenarios[scenario_idx]['output_states'] = output_states
             saved_data_number += 1
             
         return saved_data_number
 
-    def calc_states(
+    def calc_states_povl(
         self, 
         frame_data:'Data array of current frame', 
         tv_id:'ID of the TV', 
@@ -142,6 +188,150 @@ class RenderScenarios:
         tv_lane_ind:'TV lane index'):
         
         assert(frame_data[rc.FRAME][0]==frame)   
+        
+        if p.SVS_FORMAT != 'povl':
+            raise(ValueError('This functions requires povl SV format'))
+        
+        tv_itr = np.nonzero(frame_data[rc.TRACK_ID] == tv_id)[0][0]
+        
+        # exid version
+        lateral_pos = lambda itr: frame_data[rc.Y2LANE][itr]
+        
+        rel_distance_x = lambda itr: abs(frame_data[rc.X][itr] \
+                                         - frame_data[rc.X][tv_itr])
+        rel_distance_y = lambda itr: abs(frame_data[rc.Y][itr] \
+                                         - frame_data[rc.Y][tv_itr])
+        
+        # TV lane markings and lane index
+        '''
+        tv_lane_markings = (self.metas[rc.UPPER_LANE_MARKINGS]) \
+            if driving_dir == 1 else (self.metas[rc.LOWER_LANE_MARKINGS])
+        
+        
+        if driving_dir ==1:
+            tv_lane_ind = frame_data[rc.LANE_ID][tv_itr]-2
+        else:
+            tv_lane_ind = frame_data[rc.LANE_ID][tv_itr]-len(self.metas[rc.UPPER_LANE_MARKINGS])-2
+        
+        tv_lane_ind = int(tv_lane_ind)
+        tv_left_lane_ind = tv_lane_ind + 1 if driving_dir==1 else tv_lane_ind
+        if tv_lane_ind+1 >=len(tv_lane_markings):
+            return True, 0, 0, 0, 0, 0, 0
+        lane_width = (tv_lane_markings[tv_lane_ind+1]-tv_lane_markings[tv_lane_ind])
+        #print('lane width: {}'.format(lane_width))
+       '''
+        tv_lane_ind = frame_data[rc.LANE_ID][tv_itr]
+        lane_width = frame_data[rc.LANE_WIDTH][tv_itr]
+        ## Output States:
+        output_state = np.zeros((2))
+        output_state[0] = frame_data[rc.Y][tv_itr]
+        output_state[1] = frame_data[rc.X][tv_itr]
+        
+        
+        svs_itr = np.array([np.nonzero(frame_data[rc.TRACK_ID] == sv_id)[0][0]\
+                             if sv_id!=0 and sv_id!=-1 else None \
+                                for sv_id in svs_ids])
+        # svs : [pv_id, fv_id, rv1_id, rv2_id, rv3_id, lv1_id, lv2_id, lv3_id]
+        pv_itr = svs_itr[0]
+        fv_itr = svs_itr[1]
+        lcp_itr = svs_itr[2]
+        lfp_itr = svs_itr[3]
+        lcf_itr = svs_itr[4]
+        lff_itr = svs_itr[5]
+        rcp_itr = svs_itr[6]
+        rfp_itr = svs_itr[7]
+        rcf_itr = svs_itr[8]
+        rff_itr = svs_itr[9]
+        
+        ######################## State ConstantX ############################
+        state_constantx = np.zeros((4))
+        state_constantx[0] = frame_data[rc.Y_VELOCITY][tv_itr] 
+        state_constantx[1] = frame_data[rc.X_VELOCITY][tv_itr] 
+        state_constantx[2] = frame_data[rc.Y_ACCELERATION][tv_itr] 
+        state_constantx[3] = frame_data[rc.X_ACCELERATION][tv_itr] 
+        
+        ########################## State POVL ################################
+        state_povl = np.zeros((27)) # a proposed features  
+        # (1) Lateral Pos
+        state_povl[0] = lateral_pos(tv_itr)
+        # (2) Long Velo
+        state_povl[1] = frame_data[rc.X_VELOCITY][tv_itr]
+        # (3)Lat ACC
+        state_povl[2] = frame_data[rc.Y_ACCELERATION][tv_itr]
+        # (4)Long ACC
+        state_povl[3] = frame_data[rc.X_ACCELERATION][tv_itr]
+        # (5) PV X
+        state_povl[4] = rel_distance_x(pv_itr) if pv_itr != None else 400
+        # (6) PV Y
+        state_povl[5] = rel_distance_y(pv_itr) if pv_itr != None else 0
+        # (7) FV X
+        state_povl[6] = rel_distance_x(fv_itr) if fv_itr != None else 400
+        # (8) FV Y
+        state_povl[7] = rel_distance_y(pv_itr) if pv_itr != None else 0
+        
+        # (9) RCP X
+        state_povl[8] = rel_distance_x(rcp_itr) if rcp_itr != None else 400
+        # (10) RCP Y
+        state_povl[9] = rel_distance_y(rcp_itr) if rcp_itr != None else 30
+        
+        # (11) RFP X
+        state_povl[10] = rel_distance_x(rfp_itr) if rfp_itr != None else 400
+        # (12) RFP Y
+        state_povl[11] = rel_distance_y(rfp_itr) if rfp_itr != None else 30
+        
+        # (13) RCF X
+        state_povl[12] = rel_distance_x(rcf_itr) if rcf_itr != None else 400
+        # (14) RCF Y
+        state_povl[13] = rel_distance_y(rcf_itr) if rcf_itr != None else 30
+        
+        # (15) RFF X
+        state_povl[14] = rel_distance_x(rff_itr) if rff_itr != None else 400
+        # (16) RFF Y
+        state_povl[15] = rel_distance_y(rff_itr) if rff_itr != None else 30
+        
+        # (17) LCP X
+        state_povl[16] = rel_distance_x(lcp_itr) if lcp_itr != None else 400
+        # (18) LCP Y
+        state_povl[17] = rel_distance_y(lcp_itr) if lcp_itr != None else 30
+        
+        # (19) LFP X
+        state_povl[18] = rel_distance_x(lfp_itr) if lfp_itr != None else 400
+        # (20) LFP Y
+        state_povl[19] = rel_distance_y(lfp_itr) if lfp_itr != None else 30
+        
+        # (21) LCF X
+        state_povl[20] = rel_distance_x(lcf_itr) if lcf_itr != None else 400
+        # (22) LCF Y
+        state_povl[21] = rel_distance_y(lcf_itr) if lcf_itr != None else 30
+        
+        # (23) LFF X
+        state_povl[22] = rel_distance_x(lff_itr) if lff_itr != None else 400
+        # (24) LFF Y
+        state_povl[23] = rel_distance_y(lff_itr) if lff_itr != None else 30
+        
+        # (25) Lane width
+        state_povl[24] = lane_width
+        
+        n_lane = p.merge_lane_id[p.ind_list.index(self.file_num)]
+        # (26) Right Lane Type # 0:normal, 1: expect merging 2:merge, 3:no lane  
+        state_povl[25] = rf.get_lane_type(tv_lane_ind+1, n_lane)
+        # (27) Left Lane Type
+        state_povl[26] = rf.get_lane_type(tv_lane_ind-1, n_lane)
+        
+        return state_povl, state_constantx, output_state, tv_lane_ind, 
+
+
+    def calc_states_mmntp(
+        self, 
+        frame_data:'Data array of current frame', 
+        tv_id:'ID of the TV', 
+        svs_ids:'IDs of the SVs', 
+        frame:'frame',
+        tv_lane_ind:'TV lane index'):
+        
+        assert(frame_data[rc.FRAME][0]==frame)   
+        if p.SVS_FORMAT != 'highD':
+            raise(ValueError('This functions requires highD SV format'))
         tv_itr = np.nonzero(frame_data[rc.TRACK_ID] == tv_id)[0][0]
         
         
@@ -155,13 +345,15 @@ class RenderScenarios:
         
         # TV lane markings and lane index
         '''
-        tv_lane_markings = (self.metas[rc.UPPER_LANE_MARKINGS]) if driving_dir == 1 else (self.metas[rc.LOWER_LANE_MARKINGS])
+        tv_lane_markings = (self.metas[rc.UPPER_LANE_MARKINGS]) if driving_dir\
+              == 1 else (self.metas[rc.LOWER_LANE_MARKINGS])
         
         
         if driving_dir ==1:
             tv_lane_ind = frame_data[rc.LANE_ID][tv_itr]-2
         else:
-            tv_lane_ind = frame_data[rc.LANE_ID][tv_itr]-len(self.metas[rc.UPPER_LANE_MARKINGS])-2
+            tv_lane_ind = frame_data[rc.LANE_ID][tv_itr]-\
+                len(self.metas[rc.UPPER_LANE_MARKINGS])-2
         
         tv_lane_ind = int(tv_lane_ind)
         tv_left_lane_ind = tv_lane_ind + 1 if driving_dir==1 else tv_lane_ind
@@ -178,7 +370,8 @@ class RenderScenarios:
         output_state[1] = frame_data[rc.X][tv_itr]
         
         
-        svs_itr = np.array([np.nonzero(frame_data[rc.TRACK_ID] == sv_id)[0][0] if sv_id!=0 and sv_id!=-1 else None for sv_id in svs_ids])
+        svs_itr = np.array([np.nonzero(frame_data[rc.TRACK_ID] == sv_id)[0][0]\
+                             if sv_id!=0 and sv_id!=-1 else None for sv_id in svs_ids])
         # svs : [pv_id, fv_id, rv1_id, rv2_id, rv3_id, lv1_id, lv2_id, lv3_id]
         pv_itr = svs_itr[0]
         fv_itr = svs_itr[1]
@@ -190,7 +383,7 @@ class RenderScenarios:
         lv3_itr = svs_itr[7]
         
         
-        ###################################### State Merging #####################################################
+        ######################### State Merging ##############################
         state_merging = np.zeros((21)) # a proposed features  
         # (1) Lateral Pos
         state_merging[0] = lateral_pos(tv_itr)

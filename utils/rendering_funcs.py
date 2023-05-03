@@ -2,6 +2,18 @@ import numpy as np
 import cv2
 import os
 
+
+
+def get_lane_type(lane_id, n_lane):
+    dif = n_lane-lane_id
+    if lane_id <=0 or dif<0:
+        return 3 # nolane
+    elif dif>1:
+        return 0 # normal
+    elif dif==1:
+        return 1 #expect merging
+    else:
+        return 2 #merging
 def initialize_representation(
         width:'Image width', 
         height:'Image height',

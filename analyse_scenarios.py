@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pickle
 import math
+import h5py
 import read_csv as rc
 import param as p
 from mpl_toolkits import mplot3d
@@ -176,11 +177,44 @@ def plot_all(parameter, dataset_name, file_numbers):
     plt.show()
 
 
+def plot_histograms(dataset, feature, file_nums):
+    data_dir = "../../Dataset/" + dataset + "/RenderedDataset"
+    fdata_dir = os.path.join(data_dir, '{}.h5'.format(file_nums[0]))
+    with h5py.File(fdata_dir, 'r') as f:
+        data = f[feature]
+        data = data[0:-1]
+        feature_size = data.shape[1]
+    for j,file_num in enumerate(file_nums):
+        print('plotting File {}...'.format(file_num))
+        fdata_dir = os.path.join(data_dir, '{}.h5'.format(file_num))
+        with h5py.File(fdata_dir, 'r') as f:
+            for i in range(feature_size):    
+                print('-- Feature{}'.format(i))
+                fig, ax = plt.subplots()
+                f_dir = os.path.join('analysis', '{}_{}'.format(feature, i))
+                if not os.path.exists(f_dir):
+                        os.makedirs(f_dir)
+                ff_dir = os.path.join(f_dir, 'File{}.png'.format(file_num)) 
+                data = f[feature]
+                data = data[0:-1]
+                ax.hist(data[:,i], bins = 100)
+                ax.set_title('File{}'.format(file_num))
+                fig.savefig(ff_dir)
+                # plt.figure().clear()
+                # plt.close()
+                # plt.cla()
+                plt.clf()
 
+    return 0
             
             
             
 
 if __name__ == '__main__':
     file_numbers = np.arange(1,3)
-    plot_all('lateral pos', p.DATASET, file_numbers)
+    #plot_all('lateral pos', p.DATASET, file_numbers)
+    #p.ind_list
+    plot_histograms(
+        dataset = 'Processed_exid',
+        feature = 'output_states_data', 
+        file_nums = p.ind_list) # state_povl, output_states_data, state_constantx_data

@@ -219,15 +219,11 @@ class ExtractScenarios:
         tv_first_idx, 
         tv_last_idx
         ):
-        pv_id = tv_data[rc.PRECEDING_ID][tv_first_idx:tv_last_idx]
-        fv_id = tv_data[rc.FOLLOWING_ID][tv_first_idx:tv_last_idx]
-        rv1_id = tv_data[rc.RIGHT_PRECEDING_ID][tv_first_idx:tv_last_idx]
-        rv2_id = tv_data[rc.RIGHT_ALONGSIDE_ID][tv_first_idx:tv_last_idx]
-        rv3_id = tv_data[rc.RIGHT_FOLLOWING_ID][tv_first_idx:tv_last_idx]
-        lv1_id = tv_data[rc.LEFT_PRECEDING_ID][tv_first_idx:tv_last_idx]
-        lv2_id = tv_data[rc.LEFT_ALONGSIDE_ID][tv_first_idx:tv_last_idx]
-        lv3_id = tv_data[rc.LEFT_FOLLOWING_ID][tv_first_idx:tv_last_idx]
-        return {'id':np.stack([pv_id, fv_id, rv1_id, rv2_id, rv3_id, lv1_id, lv2_id, lv3_id], axis = 0), 'vis':None}
+        sv_list = []
+        for sv_id in rc.SV_IDs:
+            sv_list.append(tv_data[sv_id][tv_first_idx:tv_last_idx])
+        
+        return {'id':np.stack(sv_list, axis = 0), 'vis':None}
     
     def get_grid_data(self, tv_id, frame_data, driving_dir):
         '''

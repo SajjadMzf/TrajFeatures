@@ -57,11 +57,11 @@ if __name__ =="__main__":
     np.random.seed(0)   
     
     
-    #extract(1, p.ind_list)    
-    render(1, p.ind_list)
-    exit()
+    extract(1, p.ind_list)    
+    #render(1, p.ind_list)
     
-
+    
+    '''
     # Extract LC scenarios (multi-threads)
     total_cores = 3
     file_numbers = np.arange(1,61)
@@ -88,3 +88,5 @@ if __name__ =="__main__":
     
     for proc in procs:
         proc.join()
+
+    '''

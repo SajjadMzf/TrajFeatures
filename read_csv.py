@@ -2,7 +2,7 @@ import pandas
 import numpy as np
 import os
 import pickle
-
+import param
 # exid params
 Y2LANE = 'y2lane'
 LANE_WIDTH = 'laneWidth'
@@ -24,26 +24,52 @@ DHW = "dhw"
 THW = "thw"
 TTC = "ttc"
 PRECEDING_X_VELOCITY = "precedingXVelocity"
-PRECEDING_ID = "precedingId"
-FOLLOWING_ID = "followingId"
-LEFT_PRECEDING_ID = "leftPrecedingId"
-LEFT_ALONGSIDE_ID = "leftAlongsideId"
-LEFT_FOLLOWING_ID = "leftFollowingId"
-RIGHT_PRECEDING_ID = "rightPrecedingId"
-RIGHT_ALONGSIDE_ID = "rightAlongsideId"
-RIGHT_FOLLOWING_ID = "rightFollowingId"
 LANE_ID = "laneId"
 
-SV_IDs = [
+# HighD SV
+if param.SVS_FORMAT =='highD':
+    PRECEDING_ID = "precedingId"
+    FOLLOWING_ID = "followingId"
+    LEFT_PRECEDING_ID = "leftPrecedingId"
+    LEFT_ALONGSIDE_ID = "leftAlongsideId"
+    LEFT_FOLLOWING_ID = "leftFollowingId"
+    RIGHT_PRECEDING_ID = "rightPrecedingId"
+    RIGHT_ALONGSIDE_ID = "rightAlongsideId"
+    RIGHT_FOLLOWING_ID = "rightFollowingId"
+    SV_IDs = [
+            PRECEDING_ID, 
+            FOLLOWING_ID,
+            LEFT_PRECEDING_ID, 
+            LEFT_ALONGSIDE_ID,
+            LEFT_FOLLOWING_ID, 
+            RIGHT_PRECEDING_ID, 
+            RIGHT_ALONGSIDE_ID, 
+            RIGHT_FOLLOWING_ID
+            ]
+elif param.SVS_FORMAT == 'povl':
+    PRECEDING_ID = "precedingId"
+    FOLLOWING_ID = "followingId"
+    LEFT_CLOSE_PRECEDING_ID= 'leftClosePrecedingId'
+    LEFT_FAR_PRECEDING_ID= 'leftFarPrecedingId'
+    LEFT_CLOSE_FOLLOWING_ID= 'leftCloseFollowingId'
+    LEFT_FAR_FOLLOWING_ID= 'leftFarFollowingId'
+    RIGHT_CLOSE_PRECEDING_ID= 'rightClosePrecedingId'
+    RIGHT_FAR_PRECEDING_ID= 'rightFarPrecedingId'
+    RIGHT_CLOSE_FOLLOWING_ID= 'rightCloseFollowingId'
+    RIGHT_FAR_FOLLOWING_ID= 'rightFarFollowingId'
+    SV_IDs = [
         PRECEDING_ID, 
         FOLLOWING_ID,
-        LEFT_PRECEDING_ID, 
-        LEFT_ALONGSIDE_ID,
-        LEFT_FOLLOWING_ID, 
-        RIGHT_PRECEDING_ID, 
-        RIGHT_ALONGSIDE_ID, 
-        RIGHT_FOLLOWING_ID
+        LEFT_CLOSE_PRECEDING_ID,
+        LEFT_FAR_PRECEDING_ID,
+        LEFT_CLOSE_FOLLOWING_ID,
+        LEFT_FAR_FOLLOWING_ID,
+        RIGHT_CLOSE_PRECEDING_ID,
+        RIGHT_FAR_PRECEDING_ID,
+        RIGHT_CLOSE_FOLLOWING_ID,
+        RIGHT_FAR_FOLLOWING_ID
         ]
+
 # STATIC FILE
 INITIAL_FRAME = "initialFrame"
 FINAL_FRAME = "finalFrame"
@@ -123,16 +149,10 @@ def read_track_csv(input_path, pickle_path, reload = True, group_by = 'frames', 
                                  Y_ACCELERATION: rows[Y_ACCELERATION].values,
                                  HEIGHT: rows[HEIGHT].values,
                                  WIDTH: rows[WIDTH].values,
-                                 PRECEDING_ID: rows[PRECEDING_ID].values,
-                                 FOLLOWING_ID: rows[FOLLOWING_ID].values,
-                                 LEFT_FOLLOWING_ID: rows[LEFT_FOLLOWING_ID].values,
-                                 LEFT_ALONGSIDE_ID: rows[LEFT_ALONGSIDE_ID].values,
-                                 LEFT_PRECEDING_ID: rows[LEFT_PRECEDING_ID].values,
-                                 RIGHT_FOLLOWING_ID: rows[RIGHT_FOLLOWING_ID].values,
-                                 RIGHT_ALONGSIDE_ID: rows[RIGHT_ALONGSIDE_ID].values,
-                                 RIGHT_PRECEDING_ID: rows[RIGHT_PRECEDING_ID].values,
                                  LANE_ID: rows[LANE_ID].values
                                  }
+        for sv_id in SV_IDs:
+            groups[current_group][sv_id] = rows[sv_id].values
         current_group = current_group + 1
     pickle_out = open(pickle_path, "wb")
     pickle.dump(groups, pickle_out)

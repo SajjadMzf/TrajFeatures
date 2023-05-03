@@ -9,8 +9,8 @@ MAP_VISION = 150
 
 
 
-DATASET = "Processed_exid" #Processed_highD #Processed_NGSIM
-
+DATASET = "Processed_highD" #Processed_highD #Processed_NGSIM
+SVS_FORMAT = 'povl' # 'highD'
 
 FPS = 5
 
@@ -32,8 +32,16 @@ def generate_paths2(first_leg, ind_list, second_leg):
     return path_list
 
 
-
-if DATASET == 'Processed_exid':
+if DATASET == "Processed_highD":
+    track_paths = generate_paths('../../Dataset/HighD/Tracks/', 0, 61, '_tracks.csv')
+    frame_pickle_paths = generate_paths('../../Dataset/HighD/Pickles/', 0,  61, '_frames.pickle')
+    track_pickle_paths = generate_paths('../../Dataset/HighD/Pickles/', 0,  61, '_tracks.pickle')
+    meta_paths = generate_paths('../../Dataset/HighD/Metas/', 0,  61, '_recordingMeta.csv')
+    static_paths = generate_paths('../../Dataset/HighD/Statics/', 0,  61, '_tracksMeta.csv')
+    ind_list = list(range(1,61))
+    IN_FPS = 25
+    driving_dir = 2
+elif DATASET == 'Processed_exid':
     
     ind234 = list(range(39,73))
     ind6 = list(range(78,93))
@@ -47,14 +55,17 @@ if DATASET == 'Processed_exid':
                 '../../Dataset/exid/Maps/53-60.pickle',
                 '../../Dataset/exid/Maps/61-72.pickle',
                 '../../Dataset/exid/Maps/78-92.pickle']
+    
+    merge_lane_id = \
+        [3 if file_ind<61 else 4 for file_ind in ind_list]
     static_paths = [None]*93
     meta_paths = [None]*93
-    IN_FPS = 25
+    IN_FPS = 5
     driving_dir = 2
     #cropped_height = int(20 * image_scaleH)
     #cropped_width = int(200 * image_scaleW)
 else:
-    raise('undefined dataaset')
+    raise('undefined dataset')
 
 
 
