@@ -83,12 +83,11 @@ class ExtractScenarios:
             #    pdb.set_trace()
 
             label_array =  self.get_label(tv_idx, tv_data, driving_dir)
-            
             scenario = {
                     'file': self.file_num,
                     'tv':tv_id,
-                    'x':tv_data[rc.X],
-                    'y': tv_data[rc.Y],
+                    'x':tv_data[rc.S],
+                    'y': tv_data[rc.D],
                     'ttlc_available':True,
                     'frames':tv_data[rc.FRAME], 
                     'grid': grid_data, 
@@ -117,12 +116,12 @@ class ExtractScenarios:
         
         if len(tv_lane_list) == 1:
             return label_array_y
-        
         tv_lane_mem = tv_lane
         prev_last_idx = 0
         while True:
             start_lane = tv_lane[0]
-            last_idxs.append(prev_last_idx + np.nonzero(tv_lane!= start_lane)[0][0]) # the idx of the first element in tv_lane which is not equal to start_lane
+            last_idxs.append(prev_last_idx + np.nonzero(tv_lane!= start_lane)[0][0])
+             # the idx of the first element in tv_lane which is not equal to start_lane
             prev_last_idx = last_idxs[-1]
             tv_lane = tv_lane_mem[prev_last_idx:]
             cur_lane = tv_lane[0]
@@ -141,11 +140,15 @@ class ExtractScenarios:
             if np.all(tv_lane == tv_lane[0]):
                 break
         
-        tv_x = tv_data[rc.X]
-        tv_y = tv_data[rc.Y]
+        tv_x = tv_data[rc.S]
+        tv_y = tv_data[rc.D]
         
         indexes = np.arange(total_track_len)
-        y_gradients = [np.polynomial.polynomial.polyfit(indexes[i:i+p.LINFIT_WINDOW], tv_y[i:i+p.LINFIT_WINDOW], deg=1 )[1] for i in range(0, total_track_len-p.LINFIT_WINDOW)]#tv_y - tv_y[last_idxs[0]]#[tv_y[i+p.LINFIT_WINDOW]-tv_y[i] for i in range(0, total_track_len-p.LINFIT_WINDOW)]
+        y_gradients = [np.polynomial.polynomial.polyfit(indexes[i:i+p.LINFIT_WINDOW],\
+                     tv_y[i:i+p.LINFIT_WINDOW], deg=1 )[1] for i in \
+                     range(0, total_track_len-p.LINFIT_WINDOW)]
+        #tv_y - tv_y[last_idxs[0]]#[tv_y[i+p.LINFIT_WINDOW]-tv_y[i] for i in/
+        #  range(0, total_track_len-p.LINFIT_WINDOW)]
         
         # assuming same grad for final linfit_window timestep
         for i in range(p.LINFIT_WINDOW):
@@ -153,22 +156,35 @@ class ExtractScenarios:
         
         y_gradients = np.array(y_gradients)
         #Assumption: y axis from image bottom to top,
-        non_lc_y_gradient = lambda gradient_array, label, driving_dir: gradient_array>=0 if (label == 2 and driving_dir==1) or (label == 1 and driving_dir==2)   else gradient_array<=0
+        non_lc_y_gradient_highd = lambda gradient_array, label, driving_dir: gradient_array>=0\
+              if (label == 1 and driving_dir==1) or (label == 2 and driving_dir==2)\
+                      else gradient_array<=0
+        non_lc_y_gradient_exid = lambda gradient_array, label, driving_dir: gradient_array>=0\
+              if (label == 2 and driving_dir==1) or (label == 1 and driving_dir==2)\
+                      else gradient_array<=0
+        if p.DATASET == 'Processed_highD':
+            non_lc_y_gradient = non_lc_y_gradient_highd
+        else:
+            non_lc_y_gradient = non_lc_y_gradient_exid
+
+
         for idx, last_idx in enumerate(last_idxs):
-            non_lc_points_after_crossing_y = non_lc_y_gradient(y_gradients[last_idx:], labels[idx], driving_dir)
+            non_lc_points_after_crossing_y = non_lc_y_gradient(\
+                y_gradients[last_idx:], labels[idx], driving_dir)
             if np.any(non_lc_points_after_crossing_y):
                 end_point = last_idx + np.nonzero(non_lc_points_after_crossing_y)[0][0]-1
             else: 
                 end_point = total_track_len
                 
             #end_point = last_idx
-            non_lc_points_before_crossing_y = non_lc_y_gradient(y_gradients[:last_idx], labels[idx], driving_dir)
+            non_lc_points_before_crossing_y = non_lc_y_gradient(\
+                y_gradients[:last_idx], labels[idx], driving_dir)
             if np.any(non_lc_points_before_crossing_y):
                 start_point = np.nonzero(non_lc_points_before_crossing_y)[0][-1]
             else: 
                 start_point = 0
                 
-            label_array_y[start_point:end_point]= np.ones((end_point-start_point))*labels[idx]
+            label_array_y[start_point:end_point] = np.ones((end_point-start_point))*labels[idx]
         
         for last_idx in last_idxs:
             label_array_y[last_idx] *= -1
@@ -209,8 +225,7 @@ class ExtractScenarios:
                 os.makedirs('./labelling_figures/')
             figure_name = 'labelling_figures/{}_{}.png'.format(self.file_num, tv_idx)
             plt.savefig(figure_name)
-            plt.close()
-            
+            plt.close() 
         return label_array_y
     # TODO: to be updated
     def get_svs(
@@ -232,7 +247,7 @@ class ExtractScenarios:
         grid_data = np.zeros((3*13))
         tv_itr = np.nonzero(frame_data[rc.TRACK_ID] ==tv_id)[0][0]
         tv_lane = frame_data[rc.LANE_ID][tv_itr]
-        tv_x = frame_data[rc.X][tv_itr]
+        tv_x = frame_data[rc.S][tv_itr]
         tv_lane_itrs = np.nonzero(frame_data[rc.LANE_ID] == tv_lane)[0] 
         plus_lane_itrs = np.nonzero(frame_data[rc.LANE_ID] == tv_lane+1)[0]
         minus_lane_itrs = np.nonzero(frame_data[rc.LANE_ID] == tv_lane-1)[0]
@@ -240,21 +255,21 @@ class ExtractScenarios:
         right_lane_itrs = minus_lane_itrs if driving_dir==1 else plus_lane_itrs
         
         for ll_itr in left_lane_itrs:
-            xdist2tv = frame_data[rc.X][ll_itr]-tv_x
+            xdist2tv = frame_data[rc.S][ll_itr]-tv_x
             if abs(xdist2tv)<p.grid_max_x:
                 grid_ind = int(np.around(xdist2tv/16.667 + 6))
                 assert(grid_ind>=0)
                 grid_data[grid_ind] = frame_data[rc.TRACK_ID][ll_itr]
         
         for tl_itr in tv_lane_itrs:
-            xdist2tv = frame_data[rc.X][tl_itr]-tv_x
+            xdist2tv = frame_data[rc.S][tl_itr]-tv_x
             if  abs(xdist2tv)<p.grid_max_x and xdist2tv!=0:
                 grid_ind = int(13 + np.around(xdist2tv/16.667 + 6))
                 assert(grid_ind>=0)
                 grid_data[grid_ind] = frame_data[rc.TRACK_ID][tl_itr]
 
         for rl_itr in right_lane_itrs:
-            xdist2tv = frame_data[rc.X][rl_itr]-tv_x
+            xdist2tv = frame_data[rc.S][rl_itr]-tv_x
             if abs(xdist2tv)<p.grid_max_x:
                 grid_ind = int(26 + np.around(xdist2tv/16.667 + 6))
                 assert(grid_ind>=0)

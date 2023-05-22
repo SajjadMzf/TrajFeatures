@@ -33,13 +33,13 @@ def generate_paths2(first_leg, ind_list, second_leg):
 
 
 if DATASET == "Processed_highD":
-    track_paths = generate_paths('../../Dataset/HighD/Tracks/', 0, 61, '_tracks.csv')
-    frame_pickle_paths = generate_paths('../../Dataset/HighD/Pickles/', 0,  61, '_frames.pickle')
-    track_pickle_paths = generate_paths('../../Dataset/HighD/Pickles/', 0,  61, '_tracks.pickle')
+    track_paths = generate_paths('../../Dataset/highd_processed/Tracks/', 0, 61, '_tracks.csv')
+    frame_pickle_paths = generate_paths('../../Dataset/highd_processed/Pickles/', 0,  61, '_frames.pickle')
+    track_pickle_paths = generate_paths('../../Dataset/highd_processed/Pickles/', 0,  61, '_tracks.pickle')
     meta_paths = generate_paths('../../Dataset/HighD/Metas/', 0,  61, '_recordingMeta.csv')
     static_paths = generate_paths('../../Dataset/HighD/Statics/', 0,  61, '_tracksMeta.csv')
     ind_list = list(range(1,61))
-    IN_FPS = 25
+    IN_FPS = 5
     driving_dir = 2
 elif DATASET == 'Processed_exid':
     

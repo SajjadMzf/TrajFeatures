@@ -56,10 +56,12 @@ class RenderScenarios:
         
         #self.statics = rc.read_static_info(static_path)
         df = pandas.read_csv(track_path)
-        selected_frames = (df.frame%self.fr_div == 0).real.tolist()
+        selected_frames = (df.frame%self.fr_div == 0).tolist()
         df = df.loc[selected_frames]
         self.frame_list = [data_frame[rc.FRAME][0] \
                             for data_frame in self.frames_data]
+        if p.DATASET == 'Processed_highD':
+            self.metas = rc.read_meta_info(meta_path)
         self.update_dirs()
         
     def load_scenarios(self):
@@ -88,14 +90,18 @@ class RenderScenarios:
                                    dtype = np.float32)       
         
         file_ids = hf.create_dataset('file_ids', shape = (total_frames,), 
-                                     dtype = np.int)
+                                     dtype = int)
         tv_data = hf.create_dataset('tv_data', shape = (total_frames,), 
-                                    dtype = np.int)
+                                    dtype = int)
         labels = hf.create_dataset('labels', shape = (total_frames,), 
                                    dtype = np.float32)
         state_povl_data = hf.create_dataset('state_povl', 
                                             shape = (total_frames, 27), 
                                             dtype = np.float32)
+        state_wirth_data = hf.create_dataset('state_wirth', 
+                                            shape = (total_frames, 18), 
+                                            dtype = np.float32)
+        
         state_constantx_data = hf.create_dataset('state_constantx_data', 
                                                  shape = (total_frames, 4), 
                                                  dtype = np.float32)
@@ -109,8 +115,11 @@ class RenderScenarios:
             scenario_length = len(self.scenarios[itr]['frames'])
             state_povl_data[cur_frame:(cur_frame+scenario_length), :] =\
                   self.scenarios[itr]['states_povl']
+            state_wirth_data[cur_frame:(cur_frame+scenario_length), :] =\
+                  self.scenarios[itr]['states_wirth']
             state_constantx_data[cur_frame:(cur_frame+scenario_length), :] = \
                 self.scenarios[itr]['states_constantx']
+            
             output_states_data[cur_frame:(cur_frame+scenario_length), :] = \
                 self.scenarios[itr]['output_states']
             frame_data[cur_frame:(cur_frame+scenario_length)] = \
@@ -142,16 +151,16 @@ class RenderScenarios:
             img_frames = []
             states_povl = []
             states_constantx = []
+            states_wirth = []
             output_states = []
             number_of_fr = len(scenario['frames'])
-            tv_lane_ind = None
-                
+            tv_lane_ind = None   
             for fr in range(number_of_fr):
                 frame = scenario['frames'][fr]
                 img_frames.append(frame)
                 
                 svs_ids = scenario['svs']['id'][:,fr]
-                state_povl, state_constantx, output_state, tv_lane_ind =\
+                state_povl, state_constantx, state_wirth, output_state, tv_lane_ind =\
                       self.calc_states_povl(
                     self.frames_data[self.frame_list.index(frame)],
                     tv_id, 
@@ -167,11 +176,13 @@ class RenderScenarios:
                 
                 states_povl.append(state_povl)
                 states_constantx.append(state_constantx)
+                states_wirth.append(state_wirth)
                     
             self.scenarios[scenario_idx]['states_povl'] = np.array(states_povl)
             self.scenarios[scenario_idx]['states_constantx'] = \
                 np.array(states_constantx)
-            
+            self.scenarios[scenario_idx]['states_wirth'] = \
+                np.array(states_wirth)
             output_states = np.array(output_states)
             output_states = output_states[1:,:]- output_states[:-1,:] 
             self.scenarios[scenario_idx]['output_states'] = output_states
@@ -188,7 +199,7 @@ class RenderScenarios:
         tv_lane_ind:'TV lane index'):
         
         assert(frame_data[rc.FRAME][0]==frame)   
-        
+        assert(tv_id in frame_data[rc.TRACK_ID])
         if p.SVS_FORMAT != 'povl':
             raise(ValueError('This functions requires povl SV format'))
         
@@ -197,36 +208,29 @@ class RenderScenarios:
         # exid version
         lateral_pos = lambda itr: frame_data[rc.Y2LANE][itr]
         
-        rel_distance_x = lambda itr: abs(frame_data[rc.X][itr] \
-                                         - frame_data[rc.X][tv_itr])
-        rel_distance_y = lambda itr: abs(frame_data[rc.Y][itr] \
-                                         - frame_data[rc.Y][tv_itr])
+        rel_distance_x = lambda itr: abs(frame_data[rc.S][itr] \
+                                         - frame_data[rc.S][tv_itr])
+        rel_distance_y = lambda itr: abs(frame_data[rc.D][itr] \
+                                         - frame_data[rc.D][tv_itr])
         
         # TV lane markings and lane index
-        '''
-        tv_lane_markings = (self.metas[rc.UPPER_LANE_MARKINGS]) \
-            if driving_dir == 1 else (self.metas[rc.LOWER_LANE_MARKINGS])
-        
-        
-        if driving_dir ==1:
-            tv_lane_ind = frame_data[rc.LANE_ID][tv_itr]-2
-        else:
+        if p.DATASET == 'Processed_highD':
+            tv_lane_markings = self.metas[rc.LOWER_LANE_MARKINGS]
             tv_lane_ind = frame_data[rc.LANE_ID][tv_itr]-len(self.metas[rc.UPPER_LANE_MARKINGS])-2
-        
-        tv_lane_ind = int(tv_lane_ind)
-        tv_left_lane_ind = tv_lane_ind + 1 if driving_dir==1 else tv_lane_ind
-        if tv_lane_ind+1 >=len(tv_lane_markings):
-            return True, 0, 0, 0, 0, 0, 0
-        lane_width = (tv_lane_markings[tv_lane_ind+1]-tv_lane_markings[tv_lane_ind])
-        #print('lane width: {}'.format(lane_width))
-       '''
-        tv_lane_ind = frame_data[rc.LANE_ID][tv_itr]
-        lane_width = frame_data[rc.LANE_WIDTH][tv_itr]
+            
+            tv_lane_ind = int(tv_lane_ind)
+            tv_left_lane_ind =  tv_lane_ind
+            if tv_lane_ind+1 >=len(tv_lane_markings) or tv_lane_ind<0:
+                raise(ValueError('Unexpected target vehicle lane'))
+            lane_width = (tv_lane_markings[tv_lane_ind+1]-tv_lane_markings[tv_lane_ind])
+            #print('lane width: {}'.format(lane_width))
+        else:
+            tv_lane_ind = frame_data[rc.LANE_ID][tv_itr]
+            lane_width = frame_data[rc.LANE_WIDTH][tv_itr]
         ## Output States:
         output_state = np.zeros((2))
-        output_state[0] = frame_data[rc.Y][tv_itr]
-        output_state[1] = frame_data[rc.X][tv_itr]
-        
+        output_state[0] = frame_data[rc.D][tv_itr]
+        output_state[1] = frame_data[rc.S][tv_itr]
         
         svs_itr = np.array([np.nonzero(frame_data[rc.TRACK_ID] == sv_id)[0][0]\
                              if sv_id!=0 and sv_id!=-1 else None \
@@ -243,23 +247,27 @@ class RenderScenarios:
         rcf_itr = svs_itr[8]
         rff_itr = svs_itr[9]
         
+        lateral_pos_highd =  lambda itr, lane_itr: frame_data[rc.D][itr] - tv_lane_markings[lane_itr]
         ######################## State ConstantX ############################
         state_constantx = np.zeros((4))
-        state_constantx[0] = frame_data[rc.Y_VELOCITY][tv_itr] 
-        state_constantx[1] = frame_data[rc.X_VELOCITY][tv_itr] 
-        state_constantx[2] = frame_data[rc.Y_ACCELERATION][tv_itr] 
-        state_constantx[3] = frame_data[rc.X_ACCELERATION][tv_itr] 
+        state_constantx[0] = frame_data[rc.D_VELOCITY][tv_itr] 
+        state_constantx[1] = frame_data[rc.S_VELOCITY][tv_itr] 
+        state_constantx[2] = frame_data[rc.D_ACCELERATION][tv_itr] 
+        state_constantx[3] = frame_data[rc.S_ACCELERATION][tv_itr] 
         
         ########################## State POVL ################################
         state_povl = np.zeros((27)) # a proposed features  
         # (1) Lateral Pos
-        state_povl[0] = lateral_pos(tv_itr)
+        if p.DATASET=='Processed_highD':
+            state_povl[0] = lateral_pos_highd(tv_itr, tv_left_lane_ind)
+        else:
+            state_povl[0] = lateral_pos(tv_itr)
         # (2) Long Velo
-        state_povl[1] = frame_data[rc.X_VELOCITY][tv_itr]
+        state_povl[1] = frame_data[rc.S_VELOCITY][tv_itr]
         # (3)Lat ACC
-        state_povl[2] = frame_data[rc.Y_ACCELERATION][tv_itr]
+        state_povl[2] = frame_data[rc.D_ACCELERATION][tv_itr]
         # (4)Long ACC
-        state_povl[3] = frame_data[rc.X_ACCELERATION][tv_itr]
+        state_povl[3] = frame_data[rc.S_ACCELERATION][tv_itr]
         # (5) PV X
         state_povl[4] = rel_distance_x(pv_itr) if pv_itr != None else 400
         # (6) PV Y
@@ -311,14 +319,77 @@ class RenderScenarios:
         
         # (25) Lane width
         state_povl[24] = lane_width
+        if p.DATASET == 'Processed_highD':
+            n_lane = len(tv_lane_markings)-1
+            # (26) Right Lane Type # 0:normal, 1: expect merging 2:merge, 3:no lane  
+            state_povl[25] = rf.get_lane_type_highd(tv_lane_ind+1, n_lane)
+            # (27) Left Lane Type
+            state_povl[26] = rf.get_lane_type_highd(tv_lane_ind-1, n_lane)
+        else:
+            n_lane = p.merge_lane_id[p.ind_list.index(self.file_num)]
+            # (26) Right Lane Type # 0:normal, 1: expect merging 2:merge, 3:no lane  
+            state_povl[25] = rf.get_lane_type(tv_lane_ind+1, n_lane)
+            # (27) Left Lane Type
+            state_povl[26] = rf.get_lane_type(tv_lane_ind-1, n_lane)
+
+
+
+        ######################### State Merging ##############################
+        rel_velo_x = lambda itr: frame_data[rc.S_VELOCITY][itr] - frame_data[rc.S_VELOCITY][tv_itr] #transform from [-1,1] to [0,1]
+        rel_velo_y = lambda itr: frame_data[rc.D_VELOCITY][itr] - frame_data[rc.D_VELOCITY][tv_itr] #transform from [-1,1] to [0,1]
+        rel_acc_x = lambda itr: frame_data[rc.S_ACCELERATION][itr] - frame_data[rc.S_ACCELERATION][tv_itr]
         
-        n_lane = p.merge_lane_id[p.ind_list.index(self.file_num)]
-        # (26) Right Lane Type # 0:normal, 1: expect merging 2:merge, 3:no lane  
-        state_povl[25] = rf.get_lane_type(tv_lane_ind+1, n_lane)
-        # (27) Left Lane Type
-        state_povl[26] = rf.get_lane_type(tv_lane_ind-1, n_lane)
+        state_wirth = np.zeros((18))
         
-        return state_povl, state_constantx, output_state, tv_lane_ind, 
+        if p.DATASET == 'Processed_highD':
+            n_lane = len(tv_lane_markings)-1
+            # (0) Right Lane Type # 0:normal, 1: expect merging 2:merge, 3:no lane  
+            state_wirth[0] = rf.get_lane_type_highd(tv_lane_ind+1, n_lane)
+            # (1) Left Lane Type
+            state_wirth[1] = rf.get_lane_type_highd(tv_lane_ind-1, n_lane)
+        else:
+            n_lane = p.merge_lane_id[p.ind_list.index(self.file_num)]
+            # (0) Right Lane Type # 0:normal, 1: expect merging 2:merge, 3:no lane  
+            state_wirth[0] = rf.get_lane_type(tv_lane_ind+1, n_lane)
+            # (1) Left Lane Type
+            state_wirth[1] = rf.get_lane_type(tv_lane_ind-1, n_lane)
+        # (3) lane width,  
+        state_wirth[2] = lane_width 
+        # (4) Longitudinal distance of TV to PV, 
+        state_wirth[3] = rel_distance_x(pv_itr) if pv_itr != None else 400 
+        # (5)Longitudinal distance of TV to RPV, 
+        state_wirth[4] = rel_distance_x(rcp_itr) if rcp_itr != None else 400  
+        # (6)Longitudinal distance of TV to FV, 
+        state_wirth[5] = rel_distance_x(fv_itr) if fv_itr != None else 400 
+        # (7)lateral distance of TV to the left lane marking, 
+        if p.DATASET=='Processed_highD':
+            state_wirth[6] = lateral_pos_highd(tv_itr, tv_left_lane_ind)
+        else:
+            state_wirth[6] = lateral_pos(tv_itr)
+        # (8)lateral distance of TV to RV, 
+        state_wirth[7] = rel_distance_y(rcf_itr) if rcf_itr != None else 3*lane_width 
+        # (9)lateral distance of TV to RFV, 
+        state_wirth[8] = rel_distance_y(rff_itr) if rff_itr != None else 3*lane_width 
+        # (10) relative longitudinal velocity of TV w.r.t. PV,
+        state_wirth[9] = rel_velo_x(pv_itr) if pv_itr != None else 0  
+        # (11) relative longitudinal velocity of TV w.r.t. FV 
+        state_wirth[10] = rel_velo_x(fv_itr) if fv_itr != None else 0
+        # (12)Relative lateral velocity of TV w.r.t. PV, 
+        state_wirth[11] = rel_velo_y(pv_itr) if pv_itr != None else 0
+        # (13)Relative lateral velocity of TV w.r.t. RPV,
+        state_wirth[12] = rel_velo_y(rcp_itr) if rcp_itr != None else 0  
+        # (14)Relative lateral velocity of TV w.r.t. RV, 
+        state_wirth[13] = rel_velo_y(rcf_itr) if rcf_itr != None else 0
+        # (15)Relative lateral velocity of TV w.r.t. LV, 
+        state_wirth[14] = rel_velo_y(lcf_itr) if lcf_itr != None else 0
+        # (16) longitudinal acceleration of the TV, 
+        state_wirth[15] = frame_data[rc.S_ACCELERATION][tv_itr]
+        # (17) relative longitudinal acceleration of the TV w.r.t RPV, 
+        state_wirth[16] = rel_acc_x(rcp_itr) if rcp_itr != None else 0
+        # (18) lateral acceleration of the prediction target
+        state_wirth[17] = frame_data[rc.D_ACCELERATION][tv_itr]
+
+        return state_povl, state_constantx, state_wirth, output_state, tv_lane_ind, 
 
 
     def calc_states_mmntp(

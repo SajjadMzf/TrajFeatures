@@ -3,6 +3,7 @@ import numpy as np
 import os
 import pickle
 import param
+import pdb
 # exid params
 Y2LANE = 'y2lane'
 LANE_WIDTH = 'laneWidth'
@@ -10,14 +11,14 @@ LANE_WIDTH = 'laneWidth'
 BBOX = "bbox"
 FRAME = "frame"
 TRACK_ID = "id"
-X = "x"
-Y = "y"
+S = "s"
+D = "d"
 WIDTH = "width"
 HEIGHT = "height"
-X_VELOCITY = "xVelocity"
-Y_VELOCITY = "yVelocity"
-X_ACCELERATION = "xAcceleration"
-Y_ACCELERATION = "yAcceleration"
+S_VELOCITY = "sVelocity"
+D_VELOCITY = "dVelocity"
+S_ACCELERATION = "sAcceleration"
+D_ACCELERATION = "dAcceleration"
 FRONT_SIGHT_DISTANCE = "frontSightDistance"
 BACK_SIGHT_DISTANCE = "backSightDistance"
 DHW = "dhw"
@@ -118,7 +119,7 @@ def read_track_csv(input_path, pickle_path, reload = True, group_by = 'frames', 
             return frames 
     # Read the csv file, convert it into a useful data structure
     df = pandas.read_csv(input_path)
-    selected_frames = (df.frame%fr_div == 0).real.tolist()
+    selected_frames = (df.frame%fr_div == 0).tolist()
     df = df.loc[selected_frames]#.to_frame()
     #frame_group = df.groupby([FRAME], sort = False)
 
@@ -132,21 +133,21 @@ def read_track_csv(input_path, pickle_path, reload = True, group_by = 'frames', 
     current_group = 0
     groups = [None] * grouped.ngroups
     for group_id, rows in grouped:
-        bounding_boxes = np.transpose(np.array([rows[X].values,
-                                                rows[Y].values,
+        bounding_boxes = np.transpose(np.array([rows[S].values,
+                                                rows[D].values,
                                                 rows[WIDTH].values,
                                                 rows[HEIGHT].values]))
         groups[current_group] = {TRACK_ID: rows[TRACK_ID].values, 
                                  FRAME: rows[FRAME].values,
                                  BBOX: bounding_boxes,
-                                 X: rows[X].values,
-                                 Y: rows[Y].values,
+                                 S: rows[S].values,
+                                 D: rows[D].values,
                                  Y2LANE: rows[Y2LANE].values,
                                  LANE_WIDTH: rows[LANE_WIDTH].values,
-                                 X_VELOCITY: rows[X_VELOCITY].values,
-                                 Y_VELOCITY: rows[Y_VELOCITY].values,
-                                 X_ACCELERATION: rows[X_ACCELERATION].values,
-                                 Y_ACCELERATION: rows[Y_ACCELERATION].values,
+                                 S_VELOCITY: rows[S_VELOCITY].values,
+                                 D_VELOCITY: rows[D_VELOCITY].values,
+                                 S_ACCELERATION: rows[S_ACCELERATION].values,
+                                 D_ACCELERATION: rows[D_ACCELERATION].values,
                                  HEIGHT: rows[HEIGHT].values,
                                  WIDTH: rows[WIDTH].values,
                                  LANE_ID: rows[LANE_ID].values

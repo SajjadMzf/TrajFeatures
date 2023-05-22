@@ -179,14 +179,14 @@ def plot_all(parameter, dataset_name, file_numbers):
 
 def plot_histograms(dataset, feature, file_nums):
     data_dir = "../../Dataset/" + dataset + "/RenderedDataset"
-    fdata_dir = os.path.join(data_dir, '{}.h5'.format(file_nums[0]))
+    fdata_dir = os.path.join(data_dir, '{}.h5'.format(str(file_nums[0]).zfill(2)))
     with h5py.File(fdata_dir, 'r') as f:
         data = f[feature]
         data = data[0:-1]
         feature_size = data.shape[1]
     for j,file_num in enumerate(file_nums):
         print('plotting File {}...'.format(file_num))
-        fdata_dir = os.path.join(data_dir, '{}.h5'.format(file_num))
+        fdata_dir = os.path.join(data_dir, '{}.h5'.format(str(file_num).zfill(2)))
         with h5py.File(fdata_dir, 'r') as f:
             for i in range(feature_size):    
                 print('-- Feature{}'.format(i))
@@ -215,6 +215,6 @@ if __name__ == '__main__':
     #plot_all('lateral pos', p.DATASET, file_numbers)
     #p.ind_list
     plot_histograms(
-        dataset = 'Processed_exid',
-        feature = 'output_states_data', 
-        file_nums = p.ind_list) # state_povl, output_states_data, state_constantx_data
+        dataset = 'Processed_highD',
+        feature = 'state_povl', 
+        file_nums = [1])#p.ind_list) # state_povl, output_states_data, state_constantx_data

@@ -2,8 +2,13 @@ import numpy as np
 import cv2
 import os
 
-
-
+def get_lane_type_highd(lane_id, n_lane):
+    dif = n_lane-lane_id
+    if lane_id <0 or dif<=0:
+        return 3 # nolane
+    else:
+        return 0 # normal
+    
 def get_lane_type(lane_id, n_lane):
     dif = n_lane-lane_id
     if lane_id <=0 or dif<0:
