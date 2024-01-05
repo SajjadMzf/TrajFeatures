@@ -45,11 +45,12 @@ class RenderScenarios:
         self.frames_data = rc.read_track_csv(track_path, 
                                              frame_pickle_path,
                                               group_by = 'frames', 
+                                              reload = True,
                                               fr_div = self.fr_div)
         self.data_tracks = rc.read_track_csv(track_path, 
                                              track_pickle_path,
                                               group_by = 'tracks', 
-                                              reload = False, 
+                                              reload = True, 
                                               fr_div = self.fr_div)
         self.track_list = [data_track[rc.TRACK_ID][0] \
                            for data_track in self.data_tracks]

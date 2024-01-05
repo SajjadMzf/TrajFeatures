@@ -48,6 +48,7 @@ elif DATASET == 'Processed_exid':
     ind_list = []
     ind_list.extend(ind234)
     ind_list.extend(ind6)
+    ind_list = [39, 53, 61, 78]
     track_paths = generate_paths('../../Dataset/exid/Tracks/', 0, 93, '_tracks.csv') #start from zero to match with indexes
     frame_pickle_paths = generate_paths('../../Dataset/exid/Pickles/', 0,93, '_frames.pickle')
     track_pickle_paths = generate_paths('../../Dataset/exid/Pickles/', 0,93, '_tracks.pickle')
