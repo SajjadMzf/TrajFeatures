@@ -125,9 +125,9 @@ def read_track_csv(input_path, pickle_path, reload = True, group_by = 'frames', 
 
     # Use groupby to aggregate track info. Less error prone than iterating over the data.
     if group_by == 'frames':
-        grouped = df.groupby([FRAME], sort=True)    
+        grouped = df.groupby(FRAME, sort=True)    
     elif group_by == 'tracks':
-        grouped = df.groupby([TRACK_ID], sort=True)
+        grouped = df.groupby(TRACK_ID, sort=True)
     else:
         raise('Unknown group_by parameter')
     current_group = 0

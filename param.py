@@ -9,7 +9,7 @@ MAP_VISION = 150
 
 
 
-DATASET = "Processed_highD" #Processed_highD #Processed_NGSIM
+DATASET = "Processed_m40" #Processed_highD #Processed_NGSIM #Processed_m40
 SVS_FORMAT = 'povl' # 'highD'
 
 FPS = 5
@@ -19,10 +19,10 @@ PLOT_LABELS = False
 # parameters of CS-LSTM model
 grid_max_x = 100
 
-def generate_paths(first_leg, start_ind, end_ind, second_leg):
+def generate_paths(first_leg, start_ind, end_ind, second_leg, zfill_value=2):
     path_list = []
     for i in range(start_ind, end_ind):
-        path_list.append(first_leg + str(i).zfill(2) + second_leg)
+        path_list.append(first_leg + str(i).zfill(zfill_value) + second_leg)
     return path_list
 
 def generate_paths2(first_leg, ind_list, second_leg):
@@ -64,6 +64,17 @@ elif DATASET == 'Processed_exid':
     driving_dir = 2
     #cropped_height = int(20 * image_scaleH)
     #cropped_width = int(200 * image_scaleW)
+elif DATASET == 'Processed_m40':
+    ind_list = list(range(1,19))
+    track_paths = generate_paths('../Datasets/m40/processed/Tracks/', 0, 19, '_tracks.csv', zfill_value=0)
+    frame_pickle_paths = generate_paths('../Datasets/m40/processed/Pickles/', 0, 19, '_frames.pickle', zfill_value=0)
+    track_pickle_paths = generate_paths('../Datasets/m40/processed/Pickles/', 0, 19, '_tracks.pickle', zfill_value=0)
+    merge_lane_id = [4]*18
+    static_paths = [None]*19
+    meta_paths = [None]*19
+    IN_FPS = 5
+    driving_dir = 2
+
 else:
     raise('undefined dataset')
 
