@@ -39,8 +39,8 @@ class RenderScenarios:
         # 1.3 Others
         
         
-        self.LC_states_dir = "../../Dataset/" + dataset_name + "/Scenarios"  
-        self.LC_image_dataset_rdir = "../../Dataset/" + dataset_name + \
+        self.LC_states_dir = "../Datasets/" + dataset_name + "/Scenarios"  
+        self.LC_image_dataset_rdir = "../Datasets/" + dataset_name + \
             "/RenderedDataset"
         self.frames_data = rc.read_track_csv(track_path, 
                                              frame_pickle_path,

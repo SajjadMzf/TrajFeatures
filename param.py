@@ -9,7 +9,7 @@ MAP_VISION = 150
 
 
 
-DATASET = "Processed_m40" #Processed_highD #Processed_NGSIM #Processed_m40
+DATASET = "Processed_m40" #Processed_highD #Processed_NGSIM #Processed_m40 # Processed_exid
 SVS_FORMAT = 'povl' # 'highD'
 
 FPS = 5
@@ -48,14 +48,14 @@ elif DATASET == 'Processed_exid':
     ind_list = []
     ind_list.extend(ind234)
     ind_list.extend(ind6)
-    ind_list = [39, 53, 61, 78]
-    track_paths = generate_paths('../../Dataset/exid/Tracks/', 0, 93, '_tracks.csv') #start from zero to match with indexes
-    frame_pickle_paths = generate_paths('../../Dataset/exid/Pickles/', 0,93, '_frames.pickle')
-    track_pickle_paths = generate_paths('../../Dataset/exid/Pickles/', 0,93, '_tracks.pickle')
-    map_paths = ['../../Dataset/exid/Maps/39-52.pickle',
-                '../../Dataset/exid/Maps/53-60.pickle',
-                '../../Dataset/exid/Maps/61-72.pickle',
-                '../../Dataset/exid/Maps/78-92.pickle']
+    #ind_list = [39, 53, 61, 78]
+    track_paths = generate_paths('../Datasets/exid/Tracks/', 0, 93, '_tracks.csv') #start from zero to match with indexes
+    frame_pickle_paths = generate_paths('../Datasets/exid/Pickles/', 0,93, '_frames.pickle')
+    track_pickle_paths = generate_paths('../Datasets/exid/Pickles/', 0,93, '_tracks.pickle')
+    map_paths = ['../Datasets/exid/Maps/39-52.pickle',
+                '../Datasets/exid/Maps/53-60.pickle',
+                '../Datasets/exid/Maps/61-72.pickle',
+                '../Datasets/exid/Maps/78-92.pickle']
     
     merge_lane_id = \
         [3 if file_ind<61 else 4 for file_ind in ind_list]
@@ -66,13 +66,13 @@ elif DATASET == 'Processed_exid':
     #cropped_height = int(20 * image_scaleH)
     #cropped_width = int(200 * image_scaleW)
 elif DATASET == 'Processed_m40':
-    ind_list = list(range(1,19))
-    track_paths = generate_paths('../Datasets/m40/processed/Tracks/', 0, 19, '_tracks.csv', zfill_value=0)
-    frame_pickle_paths = generate_paths('../Datasets/m40/processed/Pickles/', 0, 19, '_frames.pickle', zfill_value=0)
-    track_pickle_paths = generate_paths('../Datasets/m40/processed/Pickles/', 0, 19, '_tracks.pickle', zfill_value=0)
-    merge_lane_id = [4]*18
-    static_paths = [None]*19
-    meta_paths = [None]*19
+    ind_list = list(range(1,207))
+    track_paths = generate_paths('../Datasets/m40/processed/Tracks/', 0, 207, '_tracks.csv', zfill_value=0)
+    frame_pickle_paths = generate_paths('../Datasets/m40/processed/Pickles/', 0, 207, '_frames.pickle', zfill_value=0)
+    track_pickle_paths = generate_paths('../Datasets/m40/processed/Pickles/', 0, 207, '_tracks.pickle', zfill_value=0)
+    merge_lane_id = [4]*207
+    static_paths = [None]*207
+    meta_paths = [None]*207
     IN_FPS = 5
     driving_dir = 2
 

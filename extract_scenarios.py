@@ -36,7 +36,7 @@ class ExtractScenarios:
 
         self.file_num = file_num       
         
-        self.LC_states_dir = "../../Dataset/"+ dataset_name +"/Scenarios"
+        self.LC_states_dir = "../Datasets/"+ dataset_name +"/Scenarios"
         if not os.path.exists(self.LC_states_dir):
             os.makedirs(self.LC_states_dir)
         self.data_tracks = rc.read_track_csv(track_path, track_pickle_path, group_by = 'tracks', reload = True, fr_div = self.fr_div)
